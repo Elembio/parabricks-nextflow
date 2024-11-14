@@ -26,7 +26,7 @@ bwa_index: ${params.bwa_index}
 include { PARABRICKS_FQ2BAM } from './modules/local/parabricks/fq2bam/main'
 include { PARABRICKS_DEEPVARIANT } from './modules/local/parabricks/deepvariant/main'
 
-def known_sites = params.known_sites ? file(params.known_sites, checkIfExists: true) : [] 
+def known_sites = params.known_sites ? params.known_sites.collect { file(it, checkIfExists: true) } : []
 def model_file = params.model_file ? file(params.model_file, checkIfExists: true) : [] 
 def proposed_variants = params.proposed_variants ? file(params.proposed_variants, checkIfExists: true) : [] 
 
