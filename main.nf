@@ -119,9 +119,9 @@ workflow {
     // MODULE: MultiQC
     //
 
-    CUSTOM_DUMPSOFTWAREVERSIONS (
-        ch_versions.unique().collectFile(name: 'collated_versions.yml')
-    )
+    //CUSTOM_DUMPSOFTWAREVERSIONS (
+    //   ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    //)
     
     // get multiqc conf files
     ch_multiqc_config = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
