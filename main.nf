@@ -23,8 +23,15 @@ bwa_index: ${params.bwa_index}
 
 """
 
+// local modules
 include { PARABRICKS_FQ2BAM } from './modules/local/parabricks/fq2bam/main'
 include { PARABRICKS_DEEPVARIANT } from './modules/local/parabricks/deepvariant/main'
+
+// nf-core modules
+include { TABIX_BGZIPTABIX } from './modules/nf-core/tabix/bgziptabix/main'
+include { MULTIQC } from './modules/nf-core/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS } from './modules/nf-core/custom/dumpsoftwareversions/main'
+
 
 def known_sites = params.known_sites ? params.known_sites.collect { file(it, checkIfExists: true) } : []
 def model_file = params.model_file ? file(params.model_file, checkIfExists: true) : [] 
@@ -81,6 +88,7 @@ workflow {
         params.bwa_index,
         known_sites
     )
+    ch_versions = ch_versions.mix(PARABRICKS_FQ2BAM.out.versions.first().ifEmpty(null))
 
     // construct bam_bai ch, add interval_bed to ch
     ch_bam_bai = PARABRICKS_FQ2BAM.out.bam_bai
@@ -97,13 +105,41 @@ workflow {
         model_file,
         proposed_variants
     )
+    ch_versions = ch_versions.mix(PARABRICKS_DEEPVARIANT.out.versions.first().ifEmpty(null))
 
-    // add the bgzip + tabix of the produced vcf/gvcf
+    deepvariant_vcf = PARABRICKS_DEEPVARIANT.out.vcf
+    
+    // bgzip and index vcf
+    TABIX_BGZIPTABIX (
+        deepvariant_vcf
+    )
+    ch_versions = ch_versions.mix(TABIX_BGZIPTABIX.out.versions.first().ifEmpty(null))
+
+    //
+    // MODULE: MultiQC
     //
 
-    // multi qc 
-    // make issue on multiqc repo, to push through module
+    CUSTOM_DUMPSOFTWAREVERSIONS (
+        ch_versions.unique().collectFile(name: 'collated_versions.yml')
+    )
     
+    // get multiqc conf files
+    ch_multiqc_config = Channel.fromPath("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+    ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
+    ch_multiqc_logo = params.multiqc_logo ? Channel.fromPath(params.multiqc_logo, checkIfExists: true) : Channel.fromPath("$projectDir/assets/Element_Biosciences_Logo_Black_RGB.png", checkIfExists: true)
+
+    ch_multiqc_files = Channel.empty()
+    ch_multiqc_files = ch_multiqc_files.mix(PARABRICKS_FQ2BAM.out.qc_metrics.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PARABRICKS_FQ2BAM.out.bqsr_table.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(PARABRICKS_FQ2BAM.out.duplicate_metrics.collect{it[1]}.ifEmpty([]))
+    
+    MULTIQC (
+        ch_multiqc_files.collect(),
+        ch_multiqc_config.toList(),
+        ch_multiqc_custom_config.toList(),
+        ch_multiqc_logo.toList()
+    )
+    multiqc_report = MULTIQC.out.report.toList()
 
 }
 
