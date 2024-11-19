@@ -11,17 +11,24 @@
       "description": "",
       "default": "",
       "properties": {
+        "batch_size": {
+          "type": "integer",
+          "default": 8
+        },
         "max_cpus": {
           "type": "integer",
-          "default": 48
+          "default": 48,
+          "hidden": true
         },
         "max_memory": {
           "type": "string",
-          "default": "192.GB"
+          "default": "192.GB",
+          "hidden": true
         },
         "max_time": {
           "type": "string",
-          "default": "4.h"
+          "default": "4.h",
+          "hidden": true
         }
       }
     },
@@ -46,7 +53,7 @@
       "description": "",
       "default": "",
       "properties": {
-        "interval_bed": {
+        "target_region_bed": {
           "type": "string"
         },
         "known_sites": {
@@ -122,6 +129,39 @@
     "bwa_index": {
       "type": "string",
       "hidden": true
+    },
+    "multiqc_config": {
+      "type": "string"
+    },
+    "multiqc_title": {
+      "type": "string"
+    },
+    "max_multiqc_email_size": {
+      "type": "string",
+      "default": "25.MB"
+    },
+    "multiqc_logo": {
+      "type": "string"
+    },
+    "custom_config_version": {
+      "type": "string",
+      "default": "master"
+    },
+    "custom_config_base": {
+      "type": "string",
+      "default": "https://raw.githubusercontent.com/nf-core/configs/master"
+    },
+    "config_profile_description": {
+      "type": "string"
+    },
+    "config_profile_contact": {
+      "type": "string"
+    },
+    "config_profile_url": {
+      "type": "string"
+    },
+    "config_profile_name": {
+      "type": "string"
     }
   }
 }

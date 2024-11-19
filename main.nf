@@ -14,7 +14,7 @@ log.info """\
 samplesheet: ${params.input}
 outdir: ${params.outdir}
 known_sites: ${params.known_sites}
-interval_bed: ${params.interval_bed}
+target_region_bed: ${params.target_region_bed}
 proposed_variants: ${params.proposed_variants}
 model_file: ${params.model_file}
 fasta: ${params.fasta}
@@ -62,7 +62,7 @@ workflow {
             create_fastq_channel(row + [num_lanes:numLanes])
         }
     
-    // collapse by sample, add interval_bed to ch
+    // collapse by sample, add target_region_bed to ch
     ch_fastq
     .map { meta, r1_fastq, r2_fastq ->
         grouped_id = meta.sample
@@ -74,10 +74,10 @@ workflow {
     }
     .groupTuple()
     .map { grouped_meta, meta, r1_fastq, r2_fastq ->
-        // Add the single interval_bed after grouping
-        def interval_file = params.interval_bed ? file(params.interval_bed, checkIfExists: true) : [] 
+        // Add the single target_region_bed after grouping
+        def target_region_bed = params.target_region_bed ? file(params.target_region_bed, checkIfExists: true) : [] 
 
-        return [grouped_meta, meta, r1_fastq, r2_fastq, interval_file]
+        return [grouped_meta, meta, r1_fastq, r2_fastq, target_region_bed]
     }
     .set { ch_grouped_fastq }
 
@@ -90,11 +90,11 @@ workflow {
     )
     ch_versions = ch_versions.mix(PARABRICKS_FQ2BAM.out.versions.first().ifEmpty(null))
 
-    // construct bam_bai ch, add interval_bed to ch
+    // construct bam_bai ch, add target_region_bed to ch
     ch_bam_bai = PARABRICKS_FQ2BAM.out.bam_bai
         .map {meta, bam, bai ->
-            def interval_file = params.interval_bed ? file(params.interval_bed, checkIfExists: true) : [] 
-            return [meta, bam, bai, interval_file]
+            def target_region_bed = params.target_region_bed ? file(params.target_region_bed, checkIfExists: true) : [] 
+            return [meta, bam, bai, target_region_bed]
         }
         .set { ch_bam_bai_interval }
     
