@@ -32,6 +32,7 @@ process PARABRICKS_DEEPVARIANT {
     def target_region_bed_command = target_region_bed ? target_region_bed.collect{"--interval-file $it"}.join(' ') : ""
     def proposed_variants_option = proposed_variants ? "--proposed-variants $proposed_variants" : ""
     def model_file_option = model_file ? "--pb-model-file $model_file" : ""
+    def wes_model_option = (params.assay == "WES") ? "--use-wes-model" : ""
 
     """
 
@@ -39,7 +40,7 @@ process PARABRICKS_DEEPVARIANT {
     exec > >(tee \$logfile)
     exec 2>&1
 
-    echo "pbrun deepvariant --ref $fasta --in-bam $bam --out-variants $output_file --num-gpus $task.accelerator.request $target_region_bed_command $proposed_variants_option $model_file_option $args"
+    echo "pbrun deepvariant --ref $fasta --in-bam $bam --out-variants $output_file --num-gpus $task.accelerator.request $wes_model_option $target_region_bed_command $proposed_variants_option $model_file_option $args"
 
     pbrun \\
         deepvariant \\
@@ -47,6 +48,7 @@ process PARABRICKS_DEEPVARIANT {
         --in-bam $bam \\
         --out-variants $output_file \\
         --num-gpus $task.accelerator.request \\
+        $wes_model_option \\
         $target_region_bed_command \\
         $proposed_variants_option \\
         $model_file_option \\

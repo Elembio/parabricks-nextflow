@@ -13,6 +13,7 @@ log.info """\
 ======================================================
 samplesheet: ${params.input}
 outdir: ${params.outdir}
+assay: ${params.assay}
 known_sites: ${params.known_sites}
 target_region_bed: ${params.target_region_bed}
 proposed_variants: ${params.proposed_variants}
