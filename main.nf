@@ -18,6 +18,7 @@ known_sites: ${params.known_sites}
 target_region_bed: ${params.target_region_bed}
 proposed_variants: ${params.proposed_variants}
 model_file: ${params.model_file}
+ignore_samples: ${params.ignore_samples}
 fasta: ${params.fasta}
 fasta_fai: ${params.fasta_fai}
 bwa_index: ${params.bwa_index}
@@ -53,7 +54,9 @@ workflow {
         .set { sheet }
 
     // count lanes/rows per sample
-    ch_fastq = sheet.map { row -> [[row.sample], row] }
+    ch_fastq = sheet
+        .filter { row -> !params.ignore_samples.contains(row.sample) } // Skip matching samples
+        .map { row -> [[row.sample], row] }
         .groupTuple()
         .map { meta, rows ->
             [rows, rows.size()]
