@@ -30,9 +30,9 @@
           "fa_icon": "fas fa-folder-open",
           "default": "./results"
         },
-        "publish_dir_mode": {
+        "ignore_samples": {
           "type": "string",
-          "default": "copy"
+          "default": "['Unassigned', 'PhiX', 'phiX', 'CBPhiX', 'Undetermined']"
         }
       }
     },
@@ -83,7 +83,7 @@
       "properties": {
         "batch_size": {
           "type": "integer",
-          "default": 8
+          "default": 12
         },
         "max_cpus": {
           "type": "integer",
@@ -101,6 +101,27 @@
           "hidden": true
         }
       }
+    },
+    "multiqc": {
+      "title": "MultiQC",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "properties": {
+        "multiqc_config": {
+          "type": "string"
+        },
+        "max_multiqc_email_size": {
+          "type": "string",
+          "default": "25.MB"
+        },
+        "multiqc_title": {
+          "type": "string"
+        },
+        "multiqc_logo": {
+          "type": "string"
+        }
+      }
     }
   },
   "allOf": [
@@ -115,9 +136,17 @@
     },
     {
       "$ref": "#/$defs/infrastructure"
+    },
+    {
+      "$ref": "#/$defs/multiqc"
     }
   ],
   "properties": {
+    "publish_dir_mode": {
+      "type": "string",
+      "default": "copy",
+      "hidden": true
+    },
     "igenomes_ignore": {
       "type": "boolean",
       "hidden": true
@@ -134,38 +163,31 @@
       "type": "string",
       "hidden": true
     },
-    "multiqc_config": {
-      "type": "string"
-    },
-    "multiqc_title": {
-      "type": "string"
-    },
-    "max_multiqc_email_size": {
-      "type": "string",
-      "default": "25.MB"
-    },
-    "multiqc_logo": {
-      "type": "string"
-    },
     "custom_config_version": {
       "type": "string",
-      "default": "master"
+      "default": "master",
+      "hidden": true
     },
     "custom_config_base": {
       "type": "string",
-      "default": "https://raw.githubusercontent.com/nf-core/configs/master"
+      "default": "https://raw.githubusercontent.com/nf-core/configs/master",
+      "hidden": true
     },
     "config_profile_description": {
-      "type": "string"
+      "type": "string",
+      "hidden": true
     },
     "config_profile_contact": {
-      "type": "string"
+      "type": "string",
+      "hidden": true
     },
     "config_profile_url": {
-      "type": "string"
+      "type": "string",
+      "hidden": true
     },
     "config_profile_name": {
-      "type": "string"
+      "type": "string",
+      "hidden": true
     }
   }
 }
