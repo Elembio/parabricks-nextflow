@@ -3,7 +3,6 @@ process PARABRICKS_FQ2BAM {
     label 'process_high'
     label 'process_gpu'
     label 'gpu'
-    stageInMode 'copy'
 
     container "nvcr.io/nvidia/clara/clara-parabricks:4.3.0-1"
 
