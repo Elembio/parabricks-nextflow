@@ -47,13 +47,11 @@ workflow {
     ch_versions = Channel.empty()
 
     ch_genome = [params.fasta, params.fasta_fai]
-    
-    // load samplesheet
+
     Channel.value(ch_input)
         .splitCsv ( header:true, sep:',' )
         .set { sheet }
 
-    // count lanes/rows per sample
     ch_fastq = sheet
         .filter { row -> !params.ignore_samples.contains(row.sample) } // Skip matching samples
         .map { row -> [[row.sample], row] }
@@ -66,28 +64,42 @@ workflow {
             create_fastq_channel(row + [num_lanes:numLanes])
         }
     
-    // collapse by sample, add target_region_bed to ch
     ch_fastq
     .map { meta, r1_fastq, r2_fastq ->
         grouped_id = meta.sample
         grouped_prefix = meta.id
         grouped_num_lanes = meta.num_lanes
-        grouped_meta = [id: grouped_id, prefix: grouped_prefix, read_group: grouped_id, num_lanes: grouped_num_lanes]
+        grouped_single_end = meta.single_end
+        grouped_meta = [id: grouped_id, prefix: grouped_prefix, read_group: grouped_id, num_lanes: grouped_num_lanes, single_end: grouped_single_end]
         
         return [grouped_meta, meta, r1_fastq, r2_fastq]
     }
     .groupTuple()
     .map { grouped_meta, meta, r1_fastq, r2_fastq ->
-        // Add the single target_region_bed after grouping
         def target_region_bed = params.target_region_bed ? file(params.target_region_bed, checkIfExists: true) : [] 
 
         return [grouped_meta, meta, r1_fastq, r2_fastq, target_region_bed]
     }
     .set { ch_grouped_fastq }
+    
+    ch_grouped_fastq
+        .map { grouped_meta, metas, r1, r2, bed ->
+            def all_se = metas.every { it.single_end }
+            def all_pe = metas.every { !it.single_end }
+
+            if (!all_se && !all_pe) {
+                error "ERROR: Inconsistent 'single_end' flags in grouped sample: ${grouped_meta.id} → ${metas*.single_end}"
+            }
+
+            def fixed_r2 = all_se ? [] : r2
+            grouped_meta.single_end = metas.single_end
+            tuple(grouped_meta, metas, r1, fixed_r2, bed)
+        }
+        .set { ch_grouped_fastq_normalized }
 
     // fastq -> bam (fq2bam)
     PARABRICKS_FQ2BAM (
-        ch_grouped_fastq,
+        ch_grouped_fastq_normalized,
         ch_genome,
         params.bwa_index,
         known_sites
@@ -181,7 +193,7 @@ def create_fastq_channel(LinkedHashMap row) {
 
     // Set r1_fastq and r2_fastq explicitly
     def r1_fastq = null
-    def r2_fastq = null
+    def r2_fastq = []
     
     // Validate R1 fastq file
     if (row.r1_fastq || row.fastq_1) {
@@ -198,13 +210,14 @@ def create_fastq_channel(LinkedHashMap row) {
         r2_fastq = file(row.r2_fastq ? row.r2_fastq : row.fastq_2)
         if (!r2_fastq.exists()) {
             log.warn "WARNING: R2 FastQ file does not exist for sample ${row.sample}. Proceeding as single-end."
-            r2_fastq = null
+            r2_fastq = []
         }
     }
 
     // Determine if the read is single-ended
     if (!row.fastq_2) {
         meta.single_end = true
+        row.fastq_2 = []
     }
 
     // Return the meta and the explicit r1 and r2 fastq files

@@ -4,10 +4,11 @@ process PARABRICKS_FQ2BAM {
     label 'process_gpu'
     label 'gpu'
 
-    container "nvcr.io/nvidia/clara/clara-parabricks:4.3.0-1"
+    container "nvcr.io/nvidia/clara/clara-parabricks:4.4.0-1"
+
 
     input:
-    tuple val(meta), val(read_group), path ( r1_fastq, stageAs: "?/*"), path ( r2_fastq, stageAs: "?/*"), path(interval_file)
+    tuple val(meta), val(read_group), path (r1_fastq, stageAs: "?/*"), path (r2_fastq, stageAs: "?/*"), path(interval_file)
     tuple path(fasta), path(fai)
     path index 
     path known_sites
@@ -70,7 +71,7 @@ process PARABRICKS_FQ2BAM {
     cp \$INDEX.pac \$FASTA_PATH.pac
     cp \$INDEX.sa \$FASTA_PATH.sa
 
-    echo "pbrun fq2bam --ref \$INDEX $in_fq_command --read-group-sm $meta.id --out-bam ${prefix}.bam --num-gpus $task.accelerator.request $known_sites_command $known_sites_output $interval_file_command --out-qc-metrics-dir qc_metrics $args"
+    echo "pbrun fq2bam --ref \$INDEX $in_fq_command --read-group-sm $meta.id --out-bam ${prefix}.bam --num-gpus $task.accelerator.request --low-memory $known_sites_command $known_sites_output $interval_file_command --out-qc-metrics-dir qc_metrics $args"
 
     pbrun \\
         fq2bam \\
@@ -79,6 +80,7 @@ process PARABRICKS_FQ2BAM {
         --read-group-sm $meta.id \\
         --out-bam ${prefix}.bam \\
         --num-gpus $task.accelerator.request \\
+        --low-memory \\
         $known_sites_command \\
         $known_sites_output \\
         $interval_file_command \\

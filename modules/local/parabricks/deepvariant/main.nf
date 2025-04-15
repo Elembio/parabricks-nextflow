@@ -2,7 +2,7 @@ process PARABRICKS_DEEPVARIANT {
     tag "$meta.id"
     label 'gpu'
 
-    container "nvcr.io/nvidia/clara/clara-parabricks:4.3.0-1"
+    container "nvcr.io/nvidia/clara/clara-parabricks:4.4.0-1"
 
     input:
     tuple val(meta), path(bam), path(bai), path(target_region_bed)
